@@ -1,0 +1,9 @@
+<!--pages/blueToothPrint/index.wxml-->
+<view>
+  <button
+    class="btn"
+    bindtap="testBlueToothPrint"
+    >
+    蓝牙打印测试
+  </button>
+</view>
