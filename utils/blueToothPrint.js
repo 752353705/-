@@ -22,16 +22,6 @@ let writeCharacterId = '';
  * 蓝牙打印数据
  */
 export default function blueToothPrint() {
-  const systemInfo = wx.getSystemInfoSync();
-  // 获取设备机型
-  const model = systemInfo.model;
-  // 判断机型
-  if (model.includes('iPhone')) {
-    isIos = true;
-  } else {
-    isIos = false;
-  }
-
   openBlueTooth();
 }
 
@@ -39,136 +29,65 @@ export default function blueToothPrint() {
  * 初始化蓝牙模块
  */
 function openBlueTooth() {
-  console.log('isIos', isIos);
-  if(!isIos) {
-    // 非 IOS
-    wx.openBluetoothAdapter({
-      success: (res) => {
-        console.log('打开蓝牙成功', res)
-        wx.showLoading({
-          title: '蓝牙已开启,扫描设备',
-        });
-        getBlueToothDevices();
-        /**
-         * 监听当前蓝牙的状态
-         * 防止用户打印过程中 误关闭蓝牙
-         */
-        
+  wx.openBluetoothAdapter({
+    mode: 'central',
+    success: (res) => {
+      console.log('打开蓝牙成功', res)
+      wx.showLoading({
+        title: '蓝牙已开启,扫描设备',
+      });
+      getBlueToothDevices();
+    },
+    fail: (err) => {
+      console.log('打开蓝牙失败', err)
+      let {
+        errno,
+        errCode
+      } = err;
 
+      if (errno === 103) {
+        wx.showModal({
+          title: '提示',
+          content: '用户未授权使用蓝牙申请,请点击右上角三个点-设置-蓝牙，设置为允许',
+          success(res) {
+            if (res.confirm) {
+              console.log('用户点击确定')
+            } else if (res.cancel) {
+              console.log('用户点击取消')
+            }
+          }
+        })
+      } else if (errCode === 10001) {
+        // 用户蓝牙开关未开启或者手机不支持蓝牙功能
+        // 此时小程序蓝牙模块已经初始化完成
+        wx.showModal({
+          title: '提示',
+          content: '当前未开启蓝牙，请手动打开蓝牙；',
+          complete: () => {
+            wx.onBluetoothAdapterStateChange(function (res) {
+              let {
+                available
+              } = res;
+              if (available) {
+                // 蓝牙适配器可用
+                wx.showLoading({
+                  title: '蓝牙已开启,扫描设备',
+                });
+                getBlueToothDevices();
+              }
+            })
+          }
+        })
 
-      },
-      fail: (err) => {
-        console.log('打开蓝牙失败', err)
-        let {
-          errno,
-          errCode
-        } = err;
-  
-        if (errno === 103) {
-          wx.showModal({
-            title: '提示',
-            content: '用户未授权使用蓝牙申请,请点击右上角三个点-设置-蓝牙，设置为允许',
-            success(res) {
-              if (res.confirm) {
-                console.log('用户点击确定')
-              } else if (res.cancel) {
-                console.log('用户点击取消')
-              }
-            }
-          })
-        } else if (errCode === 10001) {
-          // 用户蓝牙开关未开启或者手机不支持蓝牙功能
-          // 此时小程序蓝牙模块已经初始化完成
-          wx.showModal({
-            title: '提示',
-            content: '当前未开启蓝牙，请手动打开蓝牙；',
-            complete: () => {
-              wx.onBluetoothAdapterStateChange(function (res) {
-                let {
-                  available
-                } = res;
-                if (available) {
-                  // 蓝牙适配器可用
-                  wx.showLoading({
-                    title: '蓝牙已开启,扫描设备',
-                  });
-                  getBlueToothDevices();
-                }
-              })
-            }
-          })
-  
-        } else {
-          wx.showToast({
-            title: '请打开手机蓝牙并开启微信定位授权',
-            duration: 3000,
-            icon: 'none'
-          });
-        }
-      }
-    });
-  } else {
-    // IOS
-    wx.openBluetoothAdapter({
-      mode: 'central',
-      success: (res) => {
-        console.log('打开蓝牙成功', res)
-        wx.showLoading({
-          title: '蓝牙已开启,扫描设备',
+      } else {
+        wx.showToast({
+          title: '请打开手机蓝牙并开启微信定位授权',
+          duration: 3000,
+          icon: 'none'
         });
-        getBlueToothDevices();
-      },
-      fail: (err) => {
-        console.log('打开蓝牙失败', err)
-        let {
-          errno,
-          errCode
-        } = err;
-  
-        if (errno === 103) {
-          wx.showModal({
-            title: '提示',
-            content: '用户未授权使用蓝牙申请,请点击右上角三个点-设置-蓝牙，设置为允许',
-            success(res) {
-              if (res.confirm) {
-                console.log('用户点击确定')
-              } else if (res.cancel) {
-                console.log('用户点击取消')
-              }
-            }
-          })
-        } else if (errCode === 10001) {
-          // 用户蓝牙开关未开启或者手机不支持蓝牙功能
-          // 此时小程序蓝牙模块已经初始化完成
-          wx.showModal({
-            title: '提示',
-            content: '当前未开启蓝牙，请手动打开蓝牙；',
-            complete: () => {
-              wx.onBluetoothAdapterStateChange(function (res) {
-                let {
-                  available
-                } = res;
-                if (available) {
-                  // 蓝牙适配器可用
-                  wx.showLoading({
-                    title: '蓝牙已开启,扫描设备',
-                  });
-                  getBlueToothDevices();
-                }
-              })
-            }
-          })
-  
-        } else {
-          wx.showToast({
-            title: '请打开手机蓝牙并开启微信定位授权',
-            duration: 3000,
-            icon: 'none'
-          });
-        }
       }
-    });
-  }
+    }
+  });
 }
 
 /**
@@ -340,7 +259,7 @@ function writeUnit(value, isCloseBlueTooth) {
     value: value,
     writeType: isIos ? 'write' : 'writeNoResponse',
     success: function () {
-      if(isCloseBlueTooth) {
+      if (isCloseBlueTooth) {
         setTimeout(() => {
           closeBlueToothPrint();
         }, 500);
@@ -357,7 +276,7 @@ function writeUnit(value, isCloseBlueTooth) {
           title: '提示',
           content: '没有找到指定特征',
         })
-      } else if (errCode ===10012) {
+      } else if (errCode === 10012) {
         wx.showModal({
           title: '提示',
           content: '连接超时',
